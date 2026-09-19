@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Attendance Register</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --board: #16241c;
+    --board-edge: #0f1913;
+    --chalk: #f2f0e6;
+    --chalk-dim: #b9c2ba;
+    --chalk-yellow: #e8c547;
+    --chalk-blue: #8fb8de;
+    --present: #8fd19e;
+    --present-dim: rgba(143, 209, 158, 0.14);
+    --absent: #e8837d;
+    --absent-dim: rgba(232, 131, 125, 0.14);
+    --line: rgba(242, 240, 230, 0.16);
+    --line-strong: rgba(242, 240, 230, 0.32);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background:
+      radial-gradient(ellipse at top left, rgba(255,255,255,0.03), transparent 60%),
+      var(--board);
+    color: var(--chalk);
+    font-family: 'IBM Plex Sans', sans-serif;
+    padding: 48px 24px 96px;
+  }
+
+  .wrap {
+    max-width: 920px;
+    margin: 0 auto;
+  }
+
+  header {
+    margin-bottom: 40px;
+  }
+
+  h1 {
+    font-family: 'Caveat', cursive;
+    font-weight: 700;
+    font-size: 64px;
+    line-height: 1;
+    margin: 0 0 6px;
+    color: var(--chalk);
+    text-shadow: 0 0 1px rgba(242,240,230,0.3);
+  }
+
+  .subtitle {
+    color: var(--chalk-dim);
+    font-size: 15px;
+    margin: 0;
+  }
+
+  .chalk-rule {
+    border: none;
+    height: 2px;
+    margin: 20px 0 0;
+    background-image: linear-gradient(90deg, var(--line-strong) 0 10px, transparent 10px 16px);
+    background-size: 16px 2px;
+    background-repeat: repeat-x;
+    opacity: 0.8;
+  }
+
+  /* Connection bar */
+  .conn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 22px 0 36px;
+    font-size: 13px;
+    color: var(--chalk-dim);
+  }
+  .conn input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px dashed var(--line-strong);
+    color: var(--chalk-blue);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    padding: 4px 2px;
+    width: 260px;
+  }
+  .conn input:focus { outline: none; border-bottom-color: var(--chalk-blue); }
+  .conn .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--chalk-dim);
+    flex-shrink: 0;
+  }
+  .conn .dot.ok { background: var(--present); box-shadow: 0 0 6px var(--present); }
+  .conn .dot.bad { background: var(--absent); box-shadow: 0 0 6px var(--absent); }
+
+  /* Stat trio */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 28px;
+    margin-bottom: 44px;
+  }
+  .stat .num {
+    font-family: 'Caveat', cursive;
+    font-weight: 700;
+    font-size: 52px;
+    line-height: 1;
+    color: var(--chalk-yellow);
+  }
+  .stat .label {
+    font-size: 13px;
+    color: var(--chalk-dim);
+    margin-top: 4px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+  @media (max-width: 720px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+
+  /* Card = taped index card look */
+  .card {
+    border: 1.5px dashed var(--line-strong);
+    border-radius: 2px;
+    padding: 22px;
+    position: relative;
+  }
+  .card h2 {
+    font-family: 'Caveat', cursive;
+    font-weight: 600;
+    font-size: 26px;
+    margin: 0 0 16px;
+    color: var(--chalk);
+  }
+
+  label {
+    display: block;
+    font-size: 12px;
+    color: var(--chalk-dim);
+    margin: 14px 0 5px;
+  }
+  label:first-of-type { margin-top: 0; }
+
+  input[type="text"], input[type="date"] {
+    width: 100%;
+    background: rgba(242,240,230,0.04);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    color: var(--chalk);
+    padding: 9px 10px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+  }
+  input[type="text"]:focus, input[type="date"]:focus {
+    outline: none;
+    border-color: var(--chalk-blue);
+  }
+  input::-webkit-calendar-picker-indicator { filter: invert(0.8); }
+
+  .stamp-toggle {
+    display: flex;
+    gap: 10px;
+    margin-top: 6px;
+  }
+  .stamp {
+    flex: 1;
+    padding: 10px 0;
+    text-align: center;
+    border-radius: 50% / 18%;
+    border: 2px solid var(--line-strong);
+    color: var(--chalk-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    background: transparent;
+    transform: rotate(-2deg);
+    transition: transform 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  .stamp:nth-child(2) { transform: rotate(2deg); }
+  .stamp.active.present {
+    color: var(--present);
+    border-color: var(--present);
+    box-shadow: 0 0 0 1px var(--present) inset;
+  }
+  .stamp.active.absent {
+    color: var(--absent);
+    border-color: var(--absent);
+    box-shadow: 0 0 0 1px var(--absent) inset;
+  }
+  .stamp:hover { transform: rotate(0deg) scale(1.03); }
+
+  button.submit {
+    width: 100%;
+    margin-top: 20px;
+    padding: 11px 0;
+    background: transparent;
+    border: 1.5px solid var(--chalk-yellow);
+    color: var(--chalk-yellow);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  button.submit:hover { background: var(--chalk-yellow); color: var(--board); }
+  button.submit:disabled { opacity: 0.4; cursor: default; }
+
+  .lookup-result {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--line);
+    font-size: 13px;
+    color: var(--chalk-dim);
+  }
+  .lookup-result .pct {
+    font-family: 'Caveat', cursive;
+    font-weight: 700;
+    font-size: 34px;
+    color: var(--chalk-blue);
+    display: block;
+  }
+
+  /* Ledger table */
+  .ledger h2 {
+    font-family: 'Caveat', cursive;
+    font-size: 26px;
+    margin: 0 0 4px;
+  }
+  .ledger .count {
+    font-size: 12px;
+    color: var(--chalk-dim);
+    margin-bottom: 16px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+  }
+  thead th {
+    text-align: left;
+    font-weight: 500;
+    color: var(--chalk-dim);
+    font-size: 11.5px;
+    padding: 0 8px 10px;
+    border-bottom: 1px solid var(--line-strong);
+  }
+  tbody td {
+    padding: 11px 8px;
+    border-bottom: 1px dashed var(--line);
+    vertical-align: middle;
+  }
+  tbody tr:hover { background: rgba(242,240,230,0.03); }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    padding: 3px 9px;
+    border-radius: 50% / 30%;
+    border: 1.5px solid transparent;
+  }
+  .badge.present { color: var(--present); border-color: var(--present); background: var(--present-dim); }
+  .badge.absent { color: var(--absent); border-color: var(--absent); background: var(--absent-dim); }
+
+  .erase {
+    background: none;
+    border: none;
+    color: var(--chalk-dim);
+    cursor: pointer;
+    font-size: 13px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    padding: 4px 6px;
+  }
+  .erase:hover { color: var(--absent); }
+
+  .empty {
+    padding: 40px 0;
+    text-align: center;
+    color: var(--chalk-dim);
+    font-size: 14px;
+  }
+  .empty .doodle {
+    font-family: 'Caveat', cursive;
+    font-size: 22px;
+    color: var(--chalk-dim);
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(12px);
+    background: var(--board-edge);
+    border: 1px solid var(--line-strong);
+    color: var(--chalk);
+    padding: 10px 18px;
+    border-radius: 4px;
+    font-size: 13px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.error { border-color: var(--absent); color: var(--absent); }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Attendance Register</h1>
+      <p class="subtitle">Mark it, check it, keep the record straight.</p>
+      <hr class="chalk-rule">
+    </header>
+
+    <div class="conn">
+      <span class="dot" id="connDot"></span>
+      <span>API:</span>
+      <input type="text" id="apiBase" value="" spellcheck="false">
+      <span id="connLabel"></span>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="num" id="statTotal">&mdash;</div><div class="label">records on the board</div></div>
+      <div class="stat"><div class="num" id="statPresent">&mdash;</div><div class="label">marked present</div></div>
+      <div class="stat"><div class="num" id="statRate">&mdash;</div><div class="label">overall attendance rate</div></div>
+    </div>
+
+    <div class="grid">
+      <div>
+        <div class="card" style="margin-bottom: 24px;">
+          <h2>Mark attendance</h2>
+          <form id="markForm">
+            <label for="fName">Student name</label>
+            <input type="text" id="fName" placeholder="e.g. Priya Das" required>
+
+            <label for="fId">Student ID</label>
+            <input type="text" id="fId" placeholder="e.g. STU002" required>
+
+            <label for="fDate">Date</label>
+            <input type="date" id="fDate" required>
+
+            <label>Status</label>
+            <div class="stamp-toggle">
+              <div class="stamp present" data-status="PRESENT">present</div>
+              <div class="stamp absent" data-status="ABSENT">absent</div>
+            </div>
+            <input type="hidden" id="fStatus" value="">
+
+            <button type="submit" class="submit" id="submitBtn">Add to register</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2>Look up a student</h2>
+          <label for="lookupId">Student ID</label>
+          <input type="text" id="lookupId" placeholder="e.g. STU001">
+          <button type="button" class="submit" id="lookupBtn" style="margin-top: 12px;">Check attendance</button>
+          <div class="lookup-result" id="lookupResult" style="display:none;">
+            <span class="pct" id="lookupPct"></span>
+            <span id="lookupSub"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ledger">
+        <h2>The ledger</h2>
+        <div class="count" id="ledgerCount"></div>
+        <table id="ledgerTable" style="display:none;">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>ID</th>
+              <th>Date</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="ledgerBody"></tbody>
+        </table>
+        <div class="empty" id="ledgerEmpty" style="display:none;">
+          <span class="doodle">nothing on the board yet</span>
+          mark your first attendance to start the register
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const defaultBase = window.location.origin;
+  const apiBaseInput = $('apiBase');
+  apiBaseInput.value = localStorage.getItem('attendance_api_base') || defaultBase;
+
+  const connDot = $('connDot');
+  const connLabel = $('connLabel');
+  const toastEl = $('toast');
+
+  let selectedStatus = '';
+
+  function apiBase() {
+    return apiBaseInput.value.replace(/\/$/, '');
+  }
+
+  function showToast(msg, isError) {
+    toastEl.textContent = msg;
+    toastEl.className = 'toast show' + (isError ? ' error' : '');
+    setTimeout(() => { toastEl.className = 'toast'; }, 2600);
+  }
+
+  function fmtDate(iso) {
+    if (!iso) return '';
+    const d = new Date(iso + 'T00:00:00');
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  async function api(path, options) {
+    const res = await fetch(apiBase() + path, Object.assign({
+      headers: { 'Content-Type': 'application/json' }
+    }, options));
+    if (!res.ok) {
+      let detail = '';
+      try { detail = await res.text(); } catch (e) {}
+      throw new Error('Request failed (' + res.status + ')' + (detail ? ': ' + detail.slice(0, 120) : ''));
+    }
+    const text = await res.text();
+    return text ? JSON.parse(text) : null;
+  }
+
+  function renderStats(records) {
+    const total = records.length;
+    const present = records.filter(r => (r.status || '').toUpperCase() === 'PRESENT').length;
+    const rate = total ? Math.round((present / total) * 100) : 0;
+    $('statTotal').textContent = total;
+    $('statPresent').textContent = present;
+    $('statRate').textContent = total ? rate + '%' : '\u2014';
+  }
+
+  function renderLedger(records) {
+    const body = $('ledgerBody');
+    const table = $('ledgerTable');
+    const empty = $('ledgerEmpty');
+    const count = $('ledgerCount');
+
+    count.textContent = records.length + (records.length === 1 ? ' entry' : ' entries');
+
+    if (!records.length) {
+      table.style.display = 'none';
+      empty.style.display = 'block';
+      return;
+    }
+    table.style.display = 'table';
+    empty.style.display = 'none';
+
+    const sorted = [...records].sort((a, b) => (b.id || 0) - (a.id || 0));
+    body.innerHTML = sorted.map(r => {
+      const status = (r.status || '').toUpperCase();
+      const cls = status === 'PRESENT' ? 'present' : 'absent';
+      return `<tr data-id="${r.id}">
+        <td>${escapeHtml(r.studentName || '')}</td>
+        <td>${escapeHtml(r.studentId || '')}</td>
+        <td>${fmtDate(r.date)}</td>
+        <td><span class="badge ${cls}">${cls}</span></td>
+        <td style="text-align:right;"><button class="erase" data-id="${r.id}">erase</button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  async function loadAll() {
+    try {
+      const records = await api('/api/attendance');
+      connDot.className = 'dot ok';
+      connLabel.textContent = '';
+      renderStats(records);
+      renderLedger(records);
+      return records;
+    } catch (err) {
+      connDot.className = 'dot bad';
+      connLabel.textContent = 'not reachable';
+      renderLedger([]);
+      renderStats([]);
+      return [];
+    }
+  }
+
+  // Status stamp toggle
+  document.querySelectorAll('.stamp').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.stamp').forEach(s => s.classList.remove('active'));
+      el.classList.add('active');
+      selectedStatus = el.dataset.status;
+      $('fStatus').value = selectedStatus;
+    });
+  });
+
+  // Default date to today
+  $('fDate').value = new Date().toISOString().slice(0, 10);
+
+  // Submit new record
+  $('markForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!selectedStatus) {
+      showToast('Pick present or absent first', true);
+      return;
+    }
+    const btn = $('submitBtn');
+    btn.disabled = true;
+    try {
+      await api('/api/attendance', {
+        method: 'POST',
+        body: JSON.stringify({
+          studentName: $('fName').value.trim(),
+          studentId: $('fId').value.trim(),
+          date: $('fDate').value,
+          status: selectedStatus
+        })
+      });
+      $('fName').value = '';
+      $('fId').value = '';
+      document.querySelectorAll('.stamp').forEach(s => s.classList.remove('active'));
+      selectedStatus = '';
+      showToast('Added to the register');
+      loadAll();
+    } catch (err) {
+      showToast(err.message || 'Could not add record', true);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // Delete a record
+  $('ledgerBody').addEventListener('click', async (e) => {
+    if (!e.target.classList.contains('erase')) return;
+    const id = e.target.dataset.id;
+    try {
+      await api('/api/attendance/' + id, { method: 'DELETE' });
+      showToast('Erased');
+      loadAll();
+    } catch (err) {
+      showToast(err.message || 'Could not erase record', true);
+    }
+  });
+
+  // Student lookup
+  $('lookupBtn').addEventListener('click', async () => {
+    const id = $('lookupId').value.trim();
+    if (!id) return;
+    try {
+      const pct = await api('/api/attendance/student/' + encodeURIComponent(id) + '/percentage');
+      $('lookupResult').style.display = 'block';
+      $('lookupPct').textContent = Math.round(pct) + '%';
+      $('lookupSub').textContent = 'attendance for ' + id;
+    } catch (err) {
+      showToast(err.message || 'Lookup failed', true);
+    }
+  });
+
+  // Persist API base + reconnect on change
+  let debounceTimer;
+  apiBaseInput.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      localStorage.setItem('attendance_api_base', apiBaseInput.value);
+      loadAll();
+    }, 500);
+  });
+
+  loadAll();
+})();
+</script>
+</body>
+</html>
